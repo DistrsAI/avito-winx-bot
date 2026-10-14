@@ -1,0 +1,5 @@
+{
+  "functions": {
+    "api/probe.py": { "maxDuration": 60 }
+  }
+}
