@@ -1,0 +1,62 @@
+name: Avito monitor
+on:
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch:
+    inputs:
+      probe:
+        description: 'Check Avito access without Telegram or state changes'
+        type: boolean
+        default: false
+permissions:
+  contents: write
+concurrency:
+  group: avito-monitor
+  cancel-in-progress: false
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.txt
+      - name: Restore durable state
+        if: ${{ !inputs.probe }}
+        run: |
+          if git ls-remote --exit-code --heads origin state; then
+            git fetch origin state:refs/remotes/origin/state
+            git show origin/state:state.json > "$RUNNER_TEMP/restored-state.json"
+            mv "$RUNNER_TEMP/restored-state.json" state.json
+          fi
+      - name: Probe Avito
+        if: ${{ inputs.probe }}
+        run: python monitor.py --probe
+      - name: Test notification logic
+        run: python -m unittest discover -s tests -v
+      - name: Scan and notify
+        if: ${{ !inputs.probe }}
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python monitor.py
+      - name: Save durable state even after a send failure
+        if: ${{ always() && !inputs.probe }}
+        run: |
+          if [ ! -f state.json ]; then exit 0; fi
+          cp state.json "$RUNNER_TEMP/state.json"
+          if git ls-remote --exit-code --heads origin state; then
+            git checkout -B state origin/state
+          else
+            git checkout --orphan state
+            git rm -rf .
+          fi
+          cp "$RUNNER_TEMP/state.json" state.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f state.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Save monitor state'
+          git push origin state
