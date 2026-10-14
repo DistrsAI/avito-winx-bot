@@ -1,5 +1,6 @@
 {
   "functions": {
-    "api/probe.py": { "maxDuration": 60 }
+    "api/probe.py": { "maxDuration": 60 },
+    "api/browser.js": { "maxDuration": 60 }
   }
 }

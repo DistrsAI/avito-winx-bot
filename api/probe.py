@@ -18,12 +18,15 @@ class handler(BaseHTTPRequestHandler):
                     from bs4 import BeautifulSoup
                     soup = BeautifulSoup(document, "html.parser")
                     cards = soup.select('[data-marker="item"]')
+                    script_info = [{"id": s.get("id"), "type": s.get("type"), "bytes": len(s.get_text())}
+                                   for s in soup.find_all("script") if s.get("id") or s.get("type") == "application/ld+json"]
                     for element in soup.select('script, style, noscript'):
                         element.decompose()
                     text = soup.get_text(" ", strip=True)
                     results.append({"query": query, "status": response.status, "cards": len(cards),
                                     "page_title": soup.title.get_text(strip=True) if soup.title else None,
-                                    "page_text": text[:1200], "bytes": len(document),
+                                    "page_text": text[-1800:], "bytes": len(document),
+                                    "final_url": response.geturl(), "script_info": script_info,
                                     "listing_links": len(soup.select('a[data-marker="item-title"]'))})
             except HTTPError as exc:
                 results.append({"query": query, "status": exc.code, "cards": 0})
