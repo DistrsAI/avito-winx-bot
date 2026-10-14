@@ -1,5 +1,5 @@
 // Diagnostic only: no schedule, Telegram token, stored state or paid services.
-export async function probeSearch(query, fetchImpl = fetch, Rewriter = HTMLRewriter) {
+async function probeSearch(query, fetchImpl = fetch, Rewriter = HTMLRewriter) {
   const url = `https://www.avito.ru/rossiya?${new URLSearchParams({ q: query, s: '104' })}`;
   const result = { query, status: null, cards: 0, listing_links: 0, samples: [],
     headings: [], queryFields: [], page_title: '', searchConfirmed: false, ready: false };
@@ -70,9 +70,11 @@ export default {
   async fetch(request) {
     const url = new URL(request.url);
     if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 });
+    if (url.pathname === '/health') return Response.json({ service: 'avito-winx-probe', diagnostic_only: true });
     if (url.pathname !== '/' && url.pathname !== '/probe') return new Response('Not found', { status: 404 });
     const results = [];
     for (const query of ['Winx', 'Винкс']) results.push(await probeSearch(query));
+    console.log(JSON.stringify({ event: 'avito_probe', results: results.map(({query, status, cards, ready}) => ({query, status, cards, ready})) }));
     return Response.json({ ready: results.every(value => value.ready), results }, {
       headers: { 'Cache-Control': 'no-store' },
     });

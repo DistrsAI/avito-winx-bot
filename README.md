@@ -14,6 +14,8 @@
 
 ## Настройка
 
+Проверка Cloudflare также выполнена: HTML обоих поисков приходит без карточек, а Browser Run получил страницу блокировки IP и капчу. Подробности — в `cloudflare/README.md`. Ни один из проверенных способов пока не обеспечивает мониторинг.
+
 1. Создайте бота через @BotFather и нажмите «Запустить» в чате с ботом.
 2. Settings → Secrets and variables → Actions: добавьте секреты `TELEGRAM_BOT_TOKEN` (токен BotFather) и `TELEGRAM_CHAT_ID` (ID вашего чата с ботом).
 3. Actions → Avito monitor → Run workflow. Включённый `probe` проверяет только доступ к Авито без Telegram и сохранения истории. Выключенный — запускает мониторинг.
