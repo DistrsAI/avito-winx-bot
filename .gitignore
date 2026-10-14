@@ -4,3 +4,5 @@ __pycache__/
 state.json
 node_modules/
 .vercel/
+.agents/
+skills-lock.json
