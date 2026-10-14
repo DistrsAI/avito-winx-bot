@@ -16,8 +16,15 @@ class handler(BaseHTTPRequestHandler):
                 with urlopen(req, timeout=20) as response:
                     document = response.read(8_000_000).decode("utf-8", errors="replace")
                     from bs4 import BeautifulSoup
-                    cards = BeautifulSoup(document, "html.parser").select('[data-marker="item"]')
-                    results.append({"query": query, "status": response.status, "cards": len(cards)})
+                    soup = BeautifulSoup(document, "html.parser")
+                    cards = soup.select('[data-marker="item"]')
+                    for element in soup.select('script, style, noscript'):
+                        element.decompose()
+                    text = soup.get_text(" ", strip=True)
+                    results.append({"query": query, "status": response.status, "cards": len(cards),
+                                    "page_title": soup.title.get_text(strip=True) if soup.title else None,
+                                    "page_text": text[:1200], "bytes": len(document),
+                                    "listing_links": len(soup.select('a[data-marker="item-title"]'))})
             except HTTPError as exc:
                 results.append({"query": query, "status": exc.code, "cards": 0})
             except (URLError, TimeoutError, OSError):
